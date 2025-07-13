@@ -11,10 +11,10 @@ interface User {
 }
 
 const hardcodedUsers: User[] = [
-  { username: 'nguyenvana', password: 'nguyenvana123', role: 'teacher' },
-  { username: 'nguyenvanb', password: 'nguyenvanb123', role: 'teacher' },
-  { username: 'nguyenvanc', password: 'nguyenvanc123', role: 'teacher' },
-  { username: 'nguyenvand', password: 'nguyenvand123', role: 'teacher' },
+  { username: 'nguyenvana', password: '123456', role: 'teacher' },
+  { username: 'nguyenvanb', password: '123456', role: 'teacher' },
+  { username: 'nguyenvanc', password: '123456', role: 'teacher' },
+  { username: 'nguyenvand', password: '123456', role: 'teacher' },
 ];
 
 const LoginScreen: React.FC = () => {
