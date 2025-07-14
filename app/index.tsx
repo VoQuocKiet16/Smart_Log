@@ -1,9 +1,30 @@
-import { NavigationProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
-import * as React from 'react';
-import { useCallback, useEffect, useState } from 'react';
-import { Alert, Modal, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { ActivityIndicator, Button, Card, Divider, IconButton, List, Text } from 'react-native-paper';
-import { apiService, TeacherReportData } from './services/api';
+import {
+  NavigationProp,
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
+import * as React from "react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  Alert,
+  Modal,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import {
+  ActivityIndicator,
+  Button,
+  Card,
+  Divider,
+  IconButton,
+  List,
+  Text,
+} from "react-native-paper";
+import { apiService, TeacherReportData } from "./services/api";
 
 interface ClassData {
   className: string;
@@ -29,16 +50,16 @@ const studentData: ClassData[] = Array.from({ length: 10 }, (_, index) => ({
   studentReport: {
     classSize: 0,
     absences: 0,
-    ratings: ['', '', '', '', ''],
-    teacherStatus: ['', '', '', '', ''],
-    teacherAbsenceReason: ['', '', '', '', ''],
+    ratings: ["", "", "", "", ""],
+    teacherStatus: ["", "", "", "", ""],
+    teacherAbsenceReason: ["", "", "", "", ""],
   },
   teacherReport: {
     classSize: 0,
     absences: 0,
-    ratings: ['', '', '', '', ''],
-    teacherStatus: ['', '', '', '', ''],
-    teacherAbsenceReason: ['', '', '', '', ''],
+    ratings: ["", "", "", "", ""],
+    teacherStatus: ["", "", "", "", ""],
+    teacherAbsenceReason: ["", "", "", "", ""],
   },
 }));
 
@@ -51,7 +72,8 @@ const IndexScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedAbsenceReason, setSelectedAbsenceReason] = useState<string>('');
+  const [selectedAbsenceReason, setSelectedAbsenceReason] =
+    useState<string>("");
 
   // Lấy dữ liệu từ API khi component mount
   useEffect(() => {
@@ -61,11 +83,17 @@ const IndexScreen: React.FC = () => {
   // Xử lý dữ liệu mới từ teacher-input
   useEffect(() => {
     if (route.params?.refreshData && route.params?.updatedTeacherReports) {
-      console.log('Nhận dữ liệu mới từ teacher-input:', route.params.updatedTeacherReports);
+      console.log(
+        "Nhận dữ liệu mới từ teacher-input:",
+        route.params.updatedTeacherReports
+      );
       setTeacherReports(route.params.updatedTeacherReports);
-      
+
       // Xóa params để tránh xử lý lại
-      navigation.setParams({ refreshData: undefined, updatedTeacherReports: undefined });
+      navigation.setParams({
+        refreshData: undefined,
+        updatedTeacherReports: undefined,
+      });
     }
   }, [route.params?.refreshData, route.params?.updatedTeacherReports]);
 
@@ -73,7 +101,7 @@ const IndexScreen: React.FC = () => {
   useFocusEffect(
     useCallback(() => {
       // Tự động refresh dữ liệu khi focus vào index
-      console.log('Tự động refresh dữ liệu khi focus vào index');
+      console.log("Tự động refresh dữ liệu khi focus vào index");
       loadTeacherReports();
     }, [])
   );
@@ -83,16 +111,23 @@ const IndexScreen: React.FC = () => {
       setLoading(true);
       setError(null);
       const data = await apiService.getTeacherReports();
-      console.log('Loaded teacher reports:', data);
+      console.log("Loaded teacher reports:", data);
       setTeacherReports(data);
     } catch (err) {
-      console.error('Lỗi khi tải dữ liệu:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Không thể tải dữ liệu từ server';
+      console.error("Lỗi khi tải dữ liệu:", err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Không thể tải dữ liệu từ server";
       setError(errorMessage);
-      
+
       // Chỉ hiển thị alert nếu lỗi nghiêm trọng
-      if (errorMessage.includes('HTTP error') || errorMessage.includes('network')) {
-        Alert.alert('Lỗi kết nối', 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối internet và thử lại.');
+      if (
+        errorMessage.includes("HTTP error") ||
+        errorMessage.includes("network")
+      ) {
+        Alert.alert(
+          "Lỗi kết nối",
+          "Không thể kết nối đến server. Vui lòng kiểm tra kết nối internet và thử lại."
+        );
       }
     } finally {
       setLoading(false);
@@ -104,11 +139,12 @@ const IndexScreen: React.FC = () => {
     try {
       setError(null);
       const data = await apiService.getTeacherReports();
-      console.log('Refreshed teacher reports:', data);
+      console.log("Refreshed teacher reports:", data);
       setTeacherReports(data);
     } catch (err) {
-      console.error('Lỗi khi refresh dữ liệu:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Không thể tải dữ liệu từ server';
+      console.error("Lỗi khi refresh dữ liệu:", err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Không thể tải dữ liệu từ server";
       setError(errorMessage);
     } finally {
       setRefreshing(false);
@@ -117,35 +153,40 @@ const IndexScreen: React.FC = () => {
 
   // Kết hợp dữ liệu học sinh và giám thị
   const getCombinedData = (): ClassData[] => {
-    return studentData.map(studentItem => {
+    return studentData.map((studentItem) => {
       // Tìm dữ liệu giám thị mới nhất cho lớp này
       const teacherReportsForClass = teacherReports.filter(
-        report => report.className === studentItem.className
+        (report) => report.className === studentItem.className
       );
-      
+
       // Lấy dữ liệu mới nhất (timestamp lớn nhất)
-      const teacherReport = teacherReportsForClass.length > 0 
-        ? teacherReportsForClass.reduce((latest, current) => {
-            return new Date(current.timestamp) > new Date(latest.timestamp) ? current : latest;
-          })
-        : null;
+      const teacherReport =
+        teacherReportsForClass.length > 0
+          ? teacherReportsForClass.reduce((latest, current) => {
+              return new Date(current.timestamp) > new Date(latest.timestamp)
+                ? current
+                : latest;
+            })
+          : null;
 
       return {
         ...studentItem,
-        teacherReport: teacherReport ? {
-          classSize: teacherReport.classSize,
-          absences: teacherReport.absences,
-          ratings: teacherReport.ratings,
-          teacherStatus: teacherReport.teacherStatus,
-          teacherAbsenceReason: teacherReport.teacherAbsenceReason,
-        } : {
-          // Khi không có dữ liệu từ API, để trống
-          classSize: 0,
-          absences: 0,
-          ratings: ['', '', '', '', ''],
-          teacherStatus: ['', '', '', '', ''],
-          teacherAbsenceReason: ['', '', '', '', ''],
-        },
+        teacherReport: teacherReport
+          ? {
+              classSize: teacherReport.classSize,
+              absences: teacherReport.absences,
+              ratings: teacherReport.ratings,
+              teacherStatus: teacherReport.teacherStatus,
+              teacherAbsenceReason: teacherReport.teacherAbsenceReason,
+            }
+          : {
+              // Khi không có dữ liệu từ API, để trống
+              classSize: 0,
+              absences: 0,
+              ratings: ["", "", "", "", ""],
+              teacherStatus: ["", "", "", "", ""],
+              teacherAbsenceReason: ["", "", "", "", ""],
+            },
       };
     });
   };
@@ -156,27 +197,37 @@ const IndexScreen: React.FC = () => {
 
   const goToTeacherInput = (className: string) => {
     // Tìm dữ liệu hiện tại của lớp này
-    console.log('Tìm dữ liệu cho lớp:', className);
-    console.log('Danh sách teacherReports:', teacherReports);
-    
+    console.log("Tìm dữ liệu cho lớp:", className);
+    console.log("Danh sách teacherReports:", teacherReports);
+
     // Tìm tất cả dữ liệu cho lớp này
-    const teacherReportsForClass = teacherReports.filter(report => {
-      console.log('So sánh:', report.className, 'với', className, 'kết quả:', report.className === className);
+    const teacherReportsForClass = teacherReports.filter((report) => {
+      console.log(
+        "So sánh:",
+        report.className,
+        "với",
+        className,
+        "kết quả:",
+        report.className === className
+      );
       return report.className === className;
     });
-    
+
     // Lấy dữ liệu mới nhất (timestamp lớn nhất)
-    const currentData = teacherReportsForClass.length > 0 
-      ? teacherReportsForClass.reduce((latest, current) => {
-          return new Date(current.timestamp) > new Date(latest.timestamp) ? current : latest;
-        })
-      : null;
-    
-    console.log('Dữ liệu tìm được:', currentData);
-    
-    navigation.navigate("Teacher-Input", { 
+    const currentData =
+      teacherReportsForClass.length > 0
+        ? teacherReportsForClass.reduce((latest, current) => {
+            return new Date(current.timestamp) > new Date(latest.timestamp)
+              ? current
+              : latest;
+          })
+        : null;
+
+    console.log("Dữ liệu tìm được:", currentData);
+
+    navigation.navigate("Teacher-Input", {
       className,
-      existingData: currentData || null
+      existingData: currentData || null,
     });
   };
 
@@ -196,8 +247,8 @@ const IndexScreen: React.FC = () => {
         <Text style={styles.errorSubText}>
           Ứng dụng sẽ hiển thị dữ liệu mẫu. Bạn có thể thử lại sau.
         </Text>
-        <Button 
-          mode="contained" 
+        <Button
+          mode="contained"
           onPress={loadTeacherReports}
           style={styles.retryButton}
         >
@@ -211,13 +262,13 @@ const IndexScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView 
+      <ScrollView
         style={styles.container}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#4A90E2']}
+            colors={["#4A90E2"]}
             tintColor="#4A90E2"
           />
         }
@@ -231,17 +282,22 @@ const IndexScreen: React.FC = () => {
           <Card key={item.className} style={styles.classCard}>
             <Card.Title
               title={
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={styles.cardTitle}>{`Lớp ${item.className}`}</Text>
-                  <View style={
-                    [styles.statusBox,
-                      item.className.endsWith('1')
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text
+                    style={styles.cardTitle}
+                  >{`Lớp ${item.className}`}</Text>
+                  <View
+                    style={[
+                      styles.statusBox,
+                      item.className.endsWith("1")
                         ? styles.statusBoxSuccess
-                        : styles.statusBoxDanger
-                    ]
-                  }>
+                        : styles.statusBoxDanger,
+                    ]}
+                  >
                     <Text style={styles.statusBoxText}>
-                      {item.className.endsWith('1') ? 'Đã Lấy Sổ Đầu Bài' : 'Chưa Lấy Sổ Đầu Bài'}
+                      {item.className.endsWith("1")
+                        ? "Đã Lấy Sổ Đầu Bài"
+                        : "Chưa Lấy Sổ Đầu Bài"}
                     </Text>
                   </View>
                 </View>
@@ -249,7 +305,11 @@ const IndexScreen: React.FC = () => {
               right={(props) => (
                 <IconButton
                   {...props}
-                  icon={expandedClass === item.className ? 'chevron-up' : 'chevron-down'}
+                  icon={
+                    expandedClass === item.className
+                      ? "chevron-up"
+                      : "chevron-down"
+                  }
                   iconColor="#4A90E2"
                   onPress={() => toggleClass(item.className)}
                 />
@@ -257,24 +317,33 @@ const IndexScreen: React.FC = () => {
             />
             {expandedClass === item.className && (
               <Card.Content>
+                {/* Thông tin học sinh báo cáo*/}
                 <List.Section>
-                  <List.Subheader style={[styles.subheader, styles.centerSubheader]}>Thông tin học sinh báo cáo</List.Subheader>
-                  
+                  <List.Subheader
+                    style={[styles.subheader, styles.centerSubheader]}
+                  >
+                    Thông tin học sinh báo cáo
+                  </List.Subheader>
+
                   {/* Sĩ số và Vắng cùng hàng */}
                   <View style={styles.infoRow}>
                     <View style={styles.infoItem}>
                       <List.Item
-                        title={`Sĩ số: ${item.studentReport.classSize || '-'}`}
+                        title={`Sĩ số: ${item.studentReport.classSize || "-"}`}
                         titleStyle={styles.listItemTitle}
-                        left={() => <List.Icon icon="account-group" color="#4A90E2" />}
+                        left={() => (
+                          <List.Icon icon="account-group" color="#4A90E2" />
+                        )}
                         style={styles.compactListItem}
                       />
                     </View>
                     <View style={styles.infoItem}>
                       <List.Item
-                        title={`Vắng: ${item.studentReport.absences || '-'}`}
+                        title={`Vắng: ${item.studentReport.absences || "-"}`}
                         titleStyle={styles.listItemTitle}
-                        left={() => <List.Icon icon="account-remove" color="#E57373" />}
+                        left={() => (
+                          <List.Icon icon="account-remove" color="#E57373" />
+                        )}
                         style={styles.compactListItem}
                       />
                     </View>
@@ -291,15 +360,15 @@ const IndexScreen: React.FC = () => {
                         <View key={idx} style={styles.ratingItem}>
                           <Text style={styles.periodLabel}>Tiết {idx + 1}</Text>
                           {rating ? (
-                            <View style={[
-                              styles.ratingBadge,
-                              rating === 'Tốt' && styles.ratingGood,
-                              rating === 'Khá' && styles.ratingAverage,
-                              rating === 'Trung bình' && styles.ratingPoor,
-                            ]}>
-                              <Text style={styles.ratingText}>
-                                {rating}
-                              </Text>
+                            <View
+                              style={[
+                                styles.ratingBadge,
+                                rating === "Tốt" && styles.ratingGood,
+                                rating === "Khá" && styles.ratingAverage,
+                                rating === "Trung bình" && styles.ratingPoor,
+                              ]}
+                            >
+                              <Text style={styles.ratingText}>{rating}</Text>
                             </View>
                           ) : (
                             <View style={styles.emptyRating}>
@@ -315,7 +384,9 @@ const IndexScreen: React.FC = () => {
                   <View style={styles.sectionContainer}>
                     <View style={styles.sectionHeader}>
                       <List.Icon icon="account-tie" color="#50C878" />
-                      <Text style={styles.sectionTitle}>Tình trạng giáo viên</Text>
+                      <Text style={styles.sectionTitle}>
+                        Tình trạng giáo viên
+                      </Text>
                     </View>
                     <View style={styles.teacherGrid}>
                       {item.studentReport.teacherStatus.map((status, idx) => (
@@ -324,26 +395,39 @@ const IndexScreen: React.FC = () => {
                           {status ? (
                             <TouchableOpacity
                               onPress={() => {
-                                if (status === 'Vắng' && item.studentReport.teacherAbsenceReason[idx]) {
-                                  setSelectedAbsenceReason(item.studentReport.teacherAbsenceReason[idx]);
+                                if (
+                                  status === "Vắng" &&
+                                  item.studentReport.teacherAbsenceReason[idx]
+                                ) {
+                                  setSelectedAbsenceReason(
+                                    item.studentReport.teacherAbsenceReason[idx]
+                                  );
                                   setModalVisible(true);
                                 }
                               }}
-                              disabled={status !== 'Vắng' || !item.studentReport.teacherAbsenceReason[idx]}
+                              disabled={
+                                status !== "Vắng" ||
+                                !item.studentReport.teacherAbsenceReason[idx]
+                              }
                             >
-                              <View style={[
-                                styles.statusBadge,
-                                status === 'Có' && styles.statusPresent,
-                                status === 'Vắng' && styles.statusAbsent,
-                              ]}>
-                                <Text style={styles.statusText}>
-                                  {status}
-                                </Text>
-                                {status === 'Vắng' && item.studentReport.teacherAbsenceReason[idx] && (
-                                  <View style={styles.exclamationMark}>
-                                    <Text style={styles.exclamationText}>!</Text>
-                                  </View>
-                                )}
+                              <View
+                                style={[
+                                  styles.statusBadge,
+                                  status === "Có" && styles.statusPresent,
+                                  status === "Vắng" && styles.statusAbsent,
+                                ]}
+                              >
+                                <Text style={styles.statusText}>{status}</Text>
+                                {status === "Vắng" &&
+                                  item.studentReport.teacherAbsenceReason[
+                                    idx
+                                  ] && (
+                                    <View style={styles.exclamationMark}>
+                                      <Text style={styles.exclamationText}>
+                                        !
+                                      </Text>
+                                    </View>
+                                  )}
                               </View>
                             </TouchableOpacity>
                           ) : (
@@ -357,16 +441,26 @@ const IndexScreen: React.FC = () => {
                   </View>
                 </List.Section>
                 <Divider style={styles.divider} />
+                {/* Thông tin giám thị báo cáo*/}
                 <List.Section>
-                  <List.Subheader style={[styles.subheader, styles.centerSubheader]}>Thông tin giám thị báo cáo</List.Subheader>
-                  
+                  <List.Subheader
+                    style={[styles.subheader, styles.centerSubheader]}
+                  >
+                    Thông tin giám thị báo cáo
+                  </List.Subheader>
+
                   {/* Sĩ số và Vắng cùng hàng */}
                   <View style={styles.infoRow}>
                     <View style={styles.infoItem}>
                       <List.Item
                         title={`Sĩ số: ${item.teacherReport.classSize}`}
                         titleStyle={styles.listItemTitle}
-                        left={() => <List.Icon icon="account-group-outline" color="#4A90E2" />}
+                        left={() => (
+                          <List.Icon
+                            icon="account-group-outline"
+                            color="#4A90E2"
+                          />
+                        )}
                         style={styles.compactListItem}
                       />
                     </View>
@@ -374,7 +468,12 @@ const IndexScreen: React.FC = () => {
                       <List.Item
                         title={`Vắng: ${item.teacherReport.absences}`}
                         titleStyle={styles.listItemTitle}
-                        left={() => <List.Icon icon="account-off-outline" color="#E57373" />}
+                        left={() => (
+                          <List.Icon
+                            icon="account-off-outline"
+                            color="#E57373"
+                          />
+                        )}
                         style={styles.compactListItem}
                       />
                     </View>
@@ -391,15 +490,15 @@ const IndexScreen: React.FC = () => {
                         <View key={idx} style={styles.ratingItem}>
                           <Text style={styles.periodLabel}>Tiết {idx + 1}</Text>
                           {rating ? (
-                            <View style={[
-                              styles.ratingBadge,
-                              rating === 'Tốt' && styles.ratingGood,
-                              rating === 'Khá' && styles.ratingAverage,
-                              rating === 'Trung bình' && styles.ratingPoor,
-                            ]}>
-                              <Text style={styles.ratingText}>
-                                {rating}
-                              </Text>
+                            <View
+                              style={[
+                                styles.ratingBadge,
+                                rating === "Tốt" && styles.ratingGood,
+                                rating === "Khá" && styles.ratingAverage,
+                                rating === "Trung bình" && styles.ratingPoor,
+                              ]}
+                            >
+                              <Text style={styles.ratingText}>{rating}</Text>
                             </View>
                           ) : (
                             <View style={styles.emptyRating}>
@@ -415,7 +514,9 @@ const IndexScreen: React.FC = () => {
                   <View style={styles.sectionContainer}>
                     <View style={styles.sectionHeader}>
                       <List.Icon icon="account-tie" color="#50C878" />
-                      <Text style={styles.sectionTitle}>Tình trạng giáo viên</Text>
+                      <Text style={styles.sectionTitle}>
+                        Tình trạng giáo viên
+                      </Text>
                     </View>
                     <View style={styles.teacherGrid}>
                       {item.teacherReport.teacherStatus.map((status, idx) => (
@@ -424,26 +525,39 @@ const IndexScreen: React.FC = () => {
                           {status ? (
                             <TouchableOpacity
                               onPress={() => {
-                                if (status === 'Vắng' && item.teacherReport.teacherAbsenceReason[idx]) {
-                                  setSelectedAbsenceReason(item.teacherReport.teacherAbsenceReason[idx]);
+                                if (
+                                  status === "Vắng" &&
+                                  item.teacherReport.teacherAbsenceReason[idx]
+                                ) {
+                                  setSelectedAbsenceReason(
+                                    item.teacherReport.teacherAbsenceReason[idx]
+                                  );
                                   setModalVisible(true);
                                 }
                               }}
-                              disabled={status !== 'Vắng' || !item.teacherReport.teacherAbsenceReason[idx]}
+                              disabled={
+                                status !== "Vắng" ||
+                                !item.teacherReport.teacherAbsenceReason[idx]
+                              }
                             >
-                              <View style={[
-                                styles.statusBadge,
-                                status === 'Có' && styles.statusPresent,
-                                status === 'Vắng' && styles.statusAbsent,
-                              ]}>
-                                <Text style={styles.statusText}>
-                                  {status}
-                                </Text>
-                                {status === 'Vắng' && item.teacherReport.teacherAbsenceReason[idx] && (
-                                  <View style={styles.exclamationMark}>
-                                    <Text style={styles.exclamationText}>!</Text>
-                                  </View>
-                                )}
+                              <View
+                                style={[
+                                  styles.statusBadge,
+                                  status === "Có" && styles.statusPresent,
+                                  status === "Vắng" && styles.statusAbsent,
+                                ]}
+                              >
+                                <Text style={styles.statusText}>{status}</Text>
+                                {status === "Vắng" &&
+                                  item.teacherReport.teacherAbsenceReason[
+                                    idx
+                                  ] && (
+                                    <View style={styles.exclamationMark}>
+                                      <Text style={styles.exclamationText}>
+                                        !
+                                      </Text>
+                                    </View>
+                                  )}
                               </View>
                             </TouchableOpacity>
                           ) : (
@@ -473,7 +587,7 @@ const IndexScreen: React.FC = () => {
         ))}
         <View style={{ height: 32 }} />
       </ScrollView>
-      
+
       {/* Modal hiển thị lý do vắng */}
       <Modal
         animationType="fade"
@@ -514,88 +628,88 @@ const IndexScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: "#F5F7FA",
   },
   centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerContainer: {
     marginTop: 24,
     marginBottom: 8,
-    alignItems: 'center',
+    alignItems: "center",
     paddingHorizontal: 20,
   },
   title: {
-    fontWeight: 'bold',
-    color: '#4A90E2',
+    fontWeight: "bold",
+    color: "#4A90E2",
   },
   loadingText: {
     marginTop: 16,
-    color: '#4A90E2',
+    color: "#4A90E2",
     fontSize: 16,
   },
   errorText: {
-    color: '#E57373',
+    color: "#E57373",
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 16,
   },
   errorSubText: {
-    color: '#9E9E9E',
+    color: "#9E9E9E",
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 16,
   },
   retryButton: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: "#4A90E2",
   },
   classCard: {
     marginHorizontal: 12,
     marginVertical: 8,
     borderRadius: 12,
     elevation: 2,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   cardTitle: {
-    color: '#333333',
-    fontWeight: 'bold',
+    color: "#333333",
+    fontWeight: "bold",
   },
   subheader: {
-    color: '#4A90E2',
-    fontWeight: 'bold',
+    color: "#4A90E2",
+    fontWeight: "bold",
     fontSize: 16,
   },
   listItemTitle: {
-    color: '#333333',
+    color: "#333333",
   },
   ratingRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     marginVertical: 4,
   },
   ratingCard: {
     margin: 2,
     padding: 6,
     borderRadius: 8,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: "#F5F7FA",
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
   },
   ratingText: {
-    color: '#333333',
+    color: "#333333",
     fontSize: 12,
   },
   divider: {
     marginVertical: 8,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: "#E0E0E0",
   },
   updateButton: {
     marginTop: 16,
     borderRadius: 8,
   },
   centerSubheader: {
-    textAlign: 'center',
+    textAlign: "center",
   },
   statusBox: {
     marginLeft: 10,
@@ -603,23 +717,23 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 8,
     minWidth: 90,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   statusBoxSuccess: {
-    backgroundColor: '#50C878',
+    backgroundColor: "#50C878",
   },
   statusBoxDanger: {
-    backgroundColor: '#E57373',
+    backgroundColor: "#E57373",
   },
   statusBoxText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   infoItem: {
@@ -635,26 +749,26 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 8,
   },
   sectionTitle: {
-    color: '#333333',
-    fontWeight: 'bold',
+    color: "#333333",
+    fontWeight: "bold",
     marginLeft: 8,
   },
   ratingGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-around",
   },
   ratingItem: {
-    alignItems: 'center',
+    alignItems: "center",
     marginVertical: 4,
   },
   periodLabel: {
-    color: '#9E9E9E',
+    color: "#9E9E9E",
     fontSize: 12,
     marginBottom: 4,
   },
@@ -663,27 +777,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
   },
   ratingGood: {
-    backgroundColor: '#E8F5E9',
-    borderColor: '#4CAF50',
+    backgroundColor: "#E8F5E9",
+    borderColor: "#4CAF50",
   },
   ratingAverage: {
-    backgroundColor: '#FFF3E0',
-    borderColor: '#FF9800',
+    backgroundColor: "#FFF3E0",
+    borderColor: "#FF9800",
   },
   ratingPoor: {
-    backgroundColor: '#FFEBEE',
-    borderColor: '#F44336',
+    backgroundColor: "#FFEBEE",
+    borderColor: "#F44336",
   },
   teacherGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-around",
   },
   teacherItem: {
-    alignItems: 'center',
+    alignItems: "center",
     marginVertical: 4,
   },
   statusBadge: {
@@ -691,23 +805,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
   },
   statusPresent: {
-    backgroundColor: '#E8F5E9',
-    borderColor: '#4CAF50',
+    backgroundColor: "#E8F5E9",
+    borderColor: "#4CAF50",
   },
   statusAbsent: {
-    backgroundColor: '#FFEBEE',
-    borderColor: '#F44336',
+    backgroundColor: "#FFEBEE",
+    borderColor: "#F44336",
   },
   statusText: {
-    color: '#333333',
+    color: "#333333",
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   absenceReason: {
-    color: '#9E9E9E',
+    color: "#9E9E9E",
     fontSize: 12,
     marginTop: 4,
   },
@@ -716,84 +830,84 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
-    backgroundColor: '#F5F7FA',
+    borderColor: "#E0E0E0",
+    backgroundColor: "#F5F7FA",
   },
   emptyText: {
-    color: '#9E9E9E',
+    color: "#9E9E9E",
     fontSize: 12,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
   emptyStatus: {
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
-    backgroundColor: '#F5F7FA',
+    borderColor: "#E0E0E0",
+    backgroundColor: "#F5F7FA",
   },
   exclamationMark: {
-    position: 'absolute',
+    position: "absolute",
     top: -5,
     right: -5,
-    backgroundColor: '#F44336',
+    backgroundColor: "#F44336",
     borderRadius: 10,
     width: 15,
     height: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   exclamationText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   modalOverlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 10,
     padding: 20,
-    width: '80%',
-    alignItems: 'center',
+    width: "80%",
+    alignItems: "center",
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
     marginBottom: 15,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333333',
+    fontWeight: "bold",
+    color: "#333333",
   },
   closeButton: {
     padding: 5,
   },
   closeButtonText: {
     fontSize: 24,
-    color: '#9E9E9E',
+    color: "#9E9E9E",
   },
   modalBody: {
-    width: '100%',
+    width: "100%",
     marginBottom: 20,
   },
   modalReason: {
-    color: '#333333',
+    color: "#333333",
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   modalFooter: {
-    width: '100%',
+    width: "100%",
   },
   modalButton: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: "#4A90E2",
     borderRadius: 8,
   },
 });

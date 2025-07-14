@@ -1,5 +1,6 @@
 // API service cho Google Apps Script
-const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbzG92AlrxB29UGKizp7bMhwed9gXuYWq0ILYQSRhCnFsRg-v22oKNoCkv5FCK7eJfgpPA/exec';
+// const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbzG92AlrxB29UGKizp7bMhwed9gXuYWq0ILYQSRhCnFsRg-v22oKNoCkv5FCK7eJfgpPA/exec';
+const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbwFgeXDJniaPOTNHbHyveB055wMTw8P-ZfxUtRC39JU7m-cRjQfTGi-JjCX18WvLyLElQ/exec'
 const API_KEY = 'abc123xyz789';
 
 // Cấu hình cho production build
