@@ -4,6 +4,7 @@ import {
   useNavigation,
   useRoute,
 } from "@react-navigation/native";
+import axios from "axios"; // Thêm axios để fetch API
 import * as React from "react";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -42,26 +43,15 @@ interface ClassData {
     teacherStatus: string[];
     teacherAbsenceReason: string[];
   };
+  soDauBai: string; // Thêm trường này để theo dõi trạng thái sổ đầu bài
 }
 
-// Dữ liệu mẫu cho học sinh (giữ nguyên như cũ)
-const studentData: ClassData[] = Array.from({ length: 10 }, (_, index) => ({
-  className: `10A${index + 1}`,
-  studentReport: {
-    classSize: 0,
-    absences: 0,
-    ratings: ["", "", "", "", ""],
-    teacherStatus: ["", "", "", "", ""],
-    teacherAbsenceReason: ["", "", "", "", ""],
-  },
-  teacherReport: {
-    classSize: 0,
-    absences: 0,
-    ratings: ["", "", "", "", ""],
-    teacherStatus: ["", "", "", "", ""],
-    teacherAbsenceReason: ["", "", "", "", ""],
-  },
-}));
+interface StudentApiData {
+  soDauBai: string;
+  classSize: number;
+  lessonRating: string;
+  teacherAbsence: number;
+}
 
 const IndexScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp<any>>();
@@ -74,10 +64,16 @@ const IndexScreen: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedAbsenceReason, setSelectedAbsenceReason] =
     useState<string>("");
+  const [studentApiData, setStudentApiData] = useState<StudentApiData[]>([]);
 
   // Lấy dữ liệu từ API khi component mount
   useEffect(() => {
     loadTeacherReports();
+    loadStudentApiData();
+    const interval = setInterval(() => {
+      loadStudentApiData();
+    }, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   // Xử lý dữ liệu mới từ teacher-input
@@ -103,6 +99,7 @@ const IndexScreen: React.FC = () => {
       // Tự động refresh dữ liệu khi focus vào index
       console.log("Tự động refresh dữ liệu khi focus vào index");
       loadTeacherReports();
+      loadStudentApiData();
     }, [])
   );
 
@@ -134,32 +131,75 @@ const IndexScreen: React.FC = () => {
     }
   };
 
+  // Hàm lấy dữ liệu học sinh từ API, mỗi lớp gọi 1 endpoint riêng
+  const loadStudentApiData = async () => {
+    try {
+      const requests = [];
+      for (let i = 1; i <= 10; i++) {
+        // Gọi API cho từng lớp (V1 -> 10A1, V2 -> 10A2, ...)
+        requests.push(
+          axios.get(
+            `http://kenhsangtaotre.ddns.net:8080/6VhvbMCfNUHcuvntaJt0mx50l4JjhYbU/get/V${i}`
+          )
+        );
+      }
+      const responses = await Promise.all(requests);
+      // Parse dữ liệu trả về cho từng lớp
+      const parsed = responses.map((res) => {
+        let arr = res.data;
+        if (typeof arr === "string") arr = [arr];
+        const str = arr[0] || "";
+        if (!str) {
+          return {
+            soDauBai: "",
+            classSize: 0,
+            lessonRating: "",
+            teacherAbsence: "",
+          };
+        }
+        const [soDauBai, classSize, lessonRating, teacherAbsence] = str.split("?");
+        return {
+          soDauBai: soDauBai || "",
+          classSize: isNaN(Number(classSize)) ? 0 : Number(classSize),
+          lessonRating: lessonRating || "",
+          teacherAbsence: isNaN(Number(teacherAbsence)) ? "" : teacherAbsence,
+        };
+      });
+      setStudentApiData(parsed);
+    } catch (err) {
+      setStudentApiData([]);
+      console.error("Lỗi khi lấy dữ liệu học sinh từ API:", err);
+    }
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
     try {
       setError(null);
+      await loadStudentApiData();
       const data = await apiService.getTeacherReports();
-      console.log("Refreshed teacher reports:", data);
       setTeacherReports(data);
     } catch (err) {
-      console.error("Lỗi khi refresh dữ liệu:", err);
-      const errorMessage =
-        err instanceof Error ? err.message : "Không thể tải dữ liệu từ server";
-      setError(errorMessage);
+      setError("Không thể tải dữ liệu từ server");
     } finally {
       setRefreshing(false);
     }
   };
 
-  // Kết hợp dữ liệu học sinh và giám thị
+  // Hàm kết hợp dữ liệu học sinh từ API và dữ liệu giám thị
   const getCombinedData = (): ClassData[] => {
-    return studentData.map((studentItem) => {
+    return Array.from({ length: 10 }, (_, index) => {
+      const studentApi = studentApiData[index] || {
+        soDauBai: "0",
+        classSize: 0,
+        lessonRating: "",
+        teacherAbsence: 0,
+      };
       // Tìm dữ liệu giám thị mới nhất cho lớp này
+      const className = `10A${index + 1}`;
       const teacherReportsForClass = teacherReports.filter(
-        (report) => report.className === studentItem.className
+        (report) => report.className === className
       );
-
-      // Lấy dữ liệu mới nhất (timestamp lớn nhất)
       const teacherReport =
         teacherReportsForClass.length > 0
           ? teacherReportsForClass.reduce((latest, current) => {
@@ -168,9 +208,15 @@ const IndexScreen: React.FC = () => {
                 : latest;
             })
           : null;
-
       return {
-        ...studentItem,
+        className,
+        studentReport: {
+          classSize: studentApi.classSize,
+          absences: studentApi.teacherAbsence,
+          ratings: [studentApi.lessonRating],
+          teacherStatus: [],
+          teacherAbsenceReason: [],
+        },
         teacherReport: teacherReport
           ? {
               classSize: teacherReport.classSize,
@@ -180,13 +226,13 @@ const IndexScreen: React.FC = () => {
               teacherAbsenceReason: teacherReport.teacherAbsenceReason,
             }
           : {
-              // Khi không có dữ liệu từ API, để trống
               classSize: 0,
               absences: 0,
               ratings: ["", "", "", "", ""],
               teacherStatus: ["", "", "", "", ""],
               teacherAbsenceReason: ["", "", "", "", ""],
             },
+        soDauBai: studentApi.soDauBai,
       };
     });
   };
@@ -289,13 +335,13 @@ const IndexScreen: React.FC = () => {
                   <View
                     style={[
                       styles.statusBox,
-                      item.className.endsWith("1")
+                      item.soDauBai === "1"
                         ? styles.statusBoxSuccess
                         : styles.statusBoxDanger,
                     ]}
                   >
                     <Text style={styles.statusBoxText}>
-                      {item.className.endsWith("1")
+                      {item.soDauBai === "1"
                         ? "Đã Lấy Sổ Đầu Bài"
                         : "Chưa Lấy Sổ Đầu Bài"}
                     </Text>
@@ -325,7 +371,7 @@ const IndexScreen: React.FC = () => {
                     Thông tin học sinh báo cáo
                   </List.Subheader>
 
-                  {/* Sĩ số và Vắng cùng hàng */}
+                  {/* Sĩ số học sinh */}
                   <View style={styles.infoRow}>
                     <View style={styles.infoItem}>
                       <List.Item
@@ -337,37 +383,21 @@ const IndexScreen: React.FC = () => {
                         style={styles.compactListItem}
                       />
                     </View>
-                    <View style={styles.infoItem}>
-                      <List.Item
-                        title={`Vắng: ${item.studentReport.absences || "-"}`}
-                        titleStyle={styles.listItemTitle}
-                        left={() => (
-                          <List.Icon icon="account-remove" color="#E57373" />
-                        )}
-                        style={styles.compactListItem}
-                      />
-                    </View>
                   </View>
 
-                  {/* Đánh giá tiết học */}
+                  {/* Đánh giá tiết học từng tiết (text thường, không badge) */}
                   <View style={styles.sectionContainer}>
                     <View style={styles.sectionHeader}>
-                      <List.Icon icon="star" color="#F5A623" />
+                      <List.Icon icon="star-outline" color="#F5A623" />
                       <Text style={styles.sectionTitle}>Đánh giá tiết học</Text>
                     </View>
                     <View style={styles.ratingGrid}>
-                      {item.studentReport.ratings.map((rating, idx) => (
+                      {item.teacherReport.ratings.map((rating, idx) => (
                         <View key={idx} style={styles.ratingItem}>
                           <Text style={styles.periodLabel}>Tiết {idx + 1}</Text>
+                          {/* Hiển thị text đánh giá, không badge màu */}
                           {rating ? (
-                            <View
-                              style={[
-                                styles.ratingBadge,
-                                rating === "Tốt" && styles.ratingGood,
-                                rating === "Khá" && styles.ratingAverage,
-                                rating === "Trung bình" && styles.ratingPoor,
-                              ]}
-                            >
+                            <View>
                               <Text style={styles.ratingText}>{rating}</Text>
                             </View>
                           ) : (
@@ -380,64 +410,17 @@ const IndexScreen: React.FC = () => {
                     </View>
                   </View>
 
-                  {/* Tình trạng giáo viên */}
+                  {/* Tình trạng giáo viên vắng */}
                   <View style={styles.sectionContainer}>
                     <View style={styles.sectionHeader}>
                       <List.Icon icon="account-tie" color="#50C878" />
                       <Text style={styles.sectionTitle}>
-                        Tình trạng giáo viên
+                        Tình trạng giáo viên vắng
                       </Text>
                     </View>
-                    <View style={styles.teacherGrid}>
-                      {item.studentReport.teacherStatus.map((status, idx) => (
-                        <View key={idx} style={styles.teacherItem}>
-                          <Text style={styles.periodLabel}>Tiết {idx + 1}</Text>
-                          {status ? (
-                            <TouchableOpacity
-                              onPress={() => {
-                                if (
-                                  status === "Vắng" &&
-                                  item.studentReport.teacherAbsenceReason[idx]
-                                ) {
-                                  setSelectedAbsenceReason(
-                                    item.studentReport.teacherAbsenceReason[idx]
-                                  );
-                                  setModalVisible(true);
-                                }
-                              }}
-                              disabled={
-                                status !== "Vắng" ||
-                                !item.studentReport.teacherAbsenceReason[idx]
-                              }
-                            >
-                              <View
-                                style={[
-                                  styles.statusBadge,
-                                  status === "Có" && styles.statusPresent,
-                                  status === "Vắng" && styles.statusAbsent,
-                                ]}
-                              >
-                                <Text style={styles.statusText}>{status}</Text>
-                                {status === "Vắng" &&
-                                  item.studentReport.teacherAbsenceReason[
-                                    idx
-                                  ] && (
-                                    <View style={styles.exclamationMark}>
-                                      <Text style={styles.exclamationText}>
-                                        !
-                                      </Text>
-                                    </View>
-                                  )}
-                              </View>
-                            </TouchableOpacity>
-                          ) : (
-                            <View style={styles.emptyStatus}>
-                              <Text style={styles.emptyText}>-</Text>
-                            </View>
-                          )}
-                        </View>
-                      ))}
-                    </View>
+                    <Text style={{ color: '#333', marginLeft: 8, fontWeight: 'bold' }}>
+                      {item.studentReport.absences}
+                    </Text>
                   </View>
                 </List.Section>
                 <Divider style={styles.divider} />
@@ -490,14 +473,7 @@ const IndexScreen: React.FC = () => {
                         <View key={idx} style={styles.ratingItem}>
                           <Text style={styles.periodLabel}>Tiết {idx + 1}</Text>
                           {rating ? (
-                            <View
-                              style={[
-                                styles.ratingBadge,
-                                rating === "Tốt" && styles.ratingGood,
-                                rating === "Khá" && styles.ratingAverage,
-                                rating === "Trung bình" && styles.ratingPoor,
-                              ]}
-                            >
+                            <View>
                               <Text style={styles.ratingText}>{rating}</Text>
                             </View>
                           ) : (
@@ -593,6 +569,7 @@ const IndexScreen: React.FC = () => {
         animationType="fade"
         transparent={true}
         visible={modalVisible}
+        statusBarTranslucent={true}
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
@@ -779,18 +756,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E0E0E0",
   },
-  ratingGood: {
-    backgroundColor: "#E8F5E9",
-    borderColor: "#4CAF50",
-  },
-  ratingAverage: {
-    backgroundColor: "#FFF3E0",
-    borderColor: "#FF9800",
-  },
-  ratingPoor: {
-    backgroundColor: "#FFEBEE",
-    borderColor: "#F44336",
-  },
+
   teacherGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -859,7 +825,7 @@ const styles = StyleSheet.create({
   },
   exclamationText: {
     color: "#FFFFFF",
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "bold",
   },
   modalOverlay: {
