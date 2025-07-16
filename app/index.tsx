@@ -385,42 +385,20 @@ const IndexScreen: React.FC = () => {
                     </View>
                   </View>
 
-                  {/* Đánh giá tiết học từng tiết (text thường, không badge) */}
+                  {/* Đánh giá tiết học và Tình trạng giáo viên vắng (hiển thị cùng line, có icon) */}
                   <View style={styles.sectionContainer}>
-                    <View style={styles.sectionHeader}>
-                      <List.Icon icon="star-outline" color="#F5A623" />
-                      <Text style={styles.sectionTitle}>Đánh giá tiết học</Text>
-                    </View>
-                    <View style={styles.ratingGrid}>
-                      {item.teacherReport.ratings.map((rating, idx) => (
-                        <View key={idx} style={styles.ratingItem}>
-                          <Text style={styles.periodLabel}>Tiết {idx + 1}</Text>
-                          {/* Hiển thị text đánh giá, không badge màu */}
-                          {rating ? (
-                            <View>
-                              <Text style={styles.ratingText}>{rating}</Text>
-                            </View>
-                          ) : (
-                            <View style={styles.emptyRating}>
-                              <Text style={styles.emptyText}>-</Text>
-                            </View>
-                          )}
-                        </View>
-                      ))}
-                    </View>
-                  </View>
-
-                  {/* Tình trạng giáo viên vắng */}
-                  <View style={styles.sectionContainer}>
-                    <View style={styles.sectionHeader}>
-                      <List.Icon icon="account-tie" color="#50C878" />
-                      <Text style={styles.sectionTitle}>
-                        Tình trạng giáo viên vắng
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                      <List.Icon icon="star" color="#F5A623" />
+                      <Text style={{ color: '#333', marginLeft: 4 }}>
+                        Đánh giá tiết học: {item.studentReport.ratings[0]}
                       </Text>
                     </View>
-                    <Text style={{ color: '#333', marginLeft: 8, fontWeight: 'bold' }}>
-                      {item.studentReport.absences}
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <List.Icon icon="account-tie" color="#50C878" />
+                      <Text style={{ color: '#333',  marginLeft: 4 }}>
+                        Tình trạng giáo viên vắng: {item.studentReport.absences}
+                      </Text>
+                    </View>
                   </View>
                 </List.Section>
                 <Divider style={styles.divider} />
